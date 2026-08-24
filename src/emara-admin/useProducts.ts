@@ -50,7 +50,7 @@ export function useProducts({ role, storeId, statusFilter }: UseProductsParams) 
                 if (statusFilter === "approved") {
                     query = query.or("status.eq.approved,is_approved.eq.true");
                 } else if (statusFilter === "pending") {
-                    query = query.and("status.eq.pending,is_approved.eq.false");
+                    query = query.eq("status", "pending").eq("is_approved", false);
                 } else if (statusFilter === "rejected") {
                     query = query.eq("status", "rejected");
                 }

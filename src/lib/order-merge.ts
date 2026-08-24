@@ -62,7 +62,7 @@ export function buildSingleCheckoutOrder(input: {
   customer_name: string;
   customer_phone: string;
   customer_address: string;
-}): Omit<Order, "picked_up_at" | "delivered_at" | "delivery_person_id"> {
+}): Omit<Order, "picked_up_at" | "delivered_at"> {
   const items = input.items;
   const storeIds = getStoreIdsFromItems(items);
 

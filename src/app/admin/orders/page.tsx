@@ -22,7 +22,7 @@ export default function AdminOrdersHubPage() {
       const all = await fetchAllOrdersCount();
       const entries = await Promise.all(
         ORDER_STATUS_SLUGS.filter((s) => s.status !== "all").map(
-          async (s) => [s.slug, await fetchOrderCountByStatus(s.status)] as const
+          async (s) => [s.slug, await fetchOrderCountByStatus(s.status as any)] as const
         )
       );
       setCounts({ all, ...Object.fromEntries(entries) });
