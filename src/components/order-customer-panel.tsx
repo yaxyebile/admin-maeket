@@ -47,7 +47,25 @@ export function OrderCustomerPanel({
         </div>
         <div className="flex items-start gap-2 text-sm sm:col-span-2">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-          <span>{order.customer_address ?? "—"}</span>
+          <span>
+            {(() => {
+              const rawFulfillment = String(
+                order.fulfillment_type ||
+                (order as any).delivery_type ||
+                (order as any).shipping_method ||
+                ""
+              ).toLowerCase();
+              const isPickup =
+                rawFulfillment === "pickup" ||
+                rawFulfillment.includes("iska soo doono") ||
+                rawFulfillment.includes("pick") ||
+                (order as any).is_pickup === true;
+
+              return isPickup
+                ? "🚶‍♂️ PICKUP (Macmiilka iska soo doonaya dukaanka)"
+                : order.customer_address || "—";
+            })()}
+          </span>
         </div>
         {storeLabel && (
           <div className="flex items-start gap-2 text-sm sm:col-span-2">

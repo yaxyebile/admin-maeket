@@ -1,15 +1,55 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #ff6b00;
-  --color-accent: #00d285;
-  --color-foreground: #0f172a;
-  --color-background: #f8fafc;
+  --color-primary: #00BAF2;
+  --color-primary-light: #C4F4FF;
+  --color-primary-soft: #D2F7FF;
+  --color-primary-dark: #0A1C28;
+  --color-accent: #00D285;
+  --color-foreground: #0A1C28;
+  --color-background: #F4FBFE;
   --font-sans: var(--font-geist-sans);
 }
 
+:root {
+  --brand-cyan-light: #D2F7FF;
+  --brand-cyan-primary: #C4F4FF;
+  --brand-cyan-accent: #00BAF2;
+  --brand-navy-dark: #0A1C28;
+  --brand-white: #FFFFFF;
+}
+
 body {
-  background: var(--color-background);
+  background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Custom Brand Utilities */
+.bg-brand-primary {
+  background-color: #C4F4FF;
+}
+
+.bg-brand-soft {
+  background-color: #D2F7FF;
+}
+
+.bg-brand-navy {
+  background-color: #0A1C28;
+}
+
+.text-brand-navy {
+  color: #0A1C28;
+}
+
+.text-brand-accent {
+  color: #00A8E8;
+}
+
+.border-brand-primary {
+  border-color: #C4F4FF;
+}
+
+.border-brand-soft {
+  border-color: #D2F7FF;
 }

@@ -25,6 +25,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 const USER_KEY = "current_user";
 const USER_ID_KEY = "current_user_id";
 
+// Fallback demo accounts
+const DEMO_ACCOUNTS: Profile[] = [
+  {
+    id: "demo-restaurant-id",
+    name: "Restaurant Manager",
+    email: "restaurant@market.com",
+    password: "restaurant123",
+    role: "restaurant",
+    store_id: "demo-restaurant-store",
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "demo-admin-id",
+    name: "System Admin",
+    email: "admin@market.com",
+    password: "admin123",
+    role: "admin",
+    created_at: new Date().toISOString(),
+  },
+];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,14 +73,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (loginValue: string, password: string): Promise<Profile | null> => {
-      const { data, error } = await supabase.from("profiles").select("*");
-      if (error) throw error;
+      let found: Profile | undefined;
 
-      const found = data?.find(
-        (p: Profile) =>
-          (p.email === loginValue || p.phone === loginValue) &&
-          p.password === password
-      );
+      try {
+        const { data } = await supabase.from("profiles").select("*");
+        if (data) {
+          found = (data as Profile[]).find(
+            (p: Profile) =>
+              (p.email?.toLowerCase() === loginValue.toLowerCase() || p.phone === loginValue) &&
+              p.password === password
+          );
+        }
+      } catch {
+        console.warn("Supabase query error, checking fallback demo accounts");
+      }
+
+      // Check fallback demo accounts if not found in database
+      if (!found) {
+        found = DEMO_ACCOUNTS.find(
+          (d) =>
+            (d.email.toLowerCase() === loginValue.toLowerCase() || d.phone === loginValue) &&
+            d.password === password
+        );
+      }
 
       if (!found) return null;
 

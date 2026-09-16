@@ -75,8 +75,8 @@ export default function Layout() {
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-64 flex-col bg-slate-900 border-r border-slate-800 shrink-0">
                 <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-                    <Activity className="h-6 w-6 text-emerald-500 animate-pulse" />
-                    <span className="text-xl font-bold tracking-wider bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                    <img src="/logo.png" alt="EMARA Logo" className="h-8 w-8 rounded-lg object-cover" />
+                    <span className="text-xl font-black tracking-wider bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
                         EMARA Admin
                     </span>
                 </div>
@@ -90,8 +90,8 @@ export default function Layout() {
                                 key={item.name}
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30"
-                                        : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30"
+                                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
                                     }`}
                             >
                                 <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400"}`} />
@@ -191,8 +191,8 @@ export default function Layout() {
                                         to={item.path}
                                         onClick={() => setMobileOpen(false)}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
-                                                ? "bg-emerald-600 text-white"
-                                                : "text-slate-450 hover:bg-slate-805 hover:text-white"
+                                            ? "bg-emerald-600 text-white"
+                                            : "text-slate-450 hover:bg-slate-805 hover:text-white"
                                             }`}
                                     >
                                         <Icon className="h-5 w-5" />

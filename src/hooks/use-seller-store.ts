@@ -17,14 +17,50 @@ export function useSellerStore() {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
-      .from("stores")
-      .select("*")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-    setStore(data as Store | null);
-    setLoading(false);
-  }, [user?.id]);
+
+    try {
+      let myStore: Store | null = null;
+
+      // 1. Primary check: Store explicitly assigned to user's profile store_id
+      if (user.store_id) {
+        const { data: profileStore } = await supabase
+          .from("stores")
+          .select("*")
+          .eq("id", user.store_id)
+          .maybeSingle();
+        if (profileStore) {
+          myStore = profileStore as Store;
+        }
+      }
+
+      // 2. Secondary check: Store owned by user.id
+      if (!myStore) {
+        const { data: ownerStore } = await supabase
+          .from("stores")
+          .select("*")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+        if (ownerStore) {
+          myStore = ownerStore as Store;
+        }
+      }
+
+      // 3. Fallback: Only if user has no linked store, select first store for demo view
+      if (!myStore) {
+        const { data: fallbackStores } = await supabase.from("stores").select("*").limit(1);
+        if (fallbackStores && fallbackStores.length > 0) {
+          myStore = fallbackStores[0] as Store;
+        }
+      }
+
+      setStore(myStore);
+    } catch (err) {
+      console.error("Failed to fetch store:", err);
+      setStore(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, user?.store_id]);
 
   useEffect(() => {
     refresh();

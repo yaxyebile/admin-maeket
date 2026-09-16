@@ -5,12 +5,14 @@ import {
   PlusCircle,
   CreditCard,
   MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import type { NavItem } from "@/components/sidebar";
 
 export const sellerNavItems: NavItem[] = [
   { href: "/seller", label: "Dashboard", icon: LayoutDashboard },
   { href: "/seller/products", label: "Products", icon: Package },
+  { href: "/seller/discounts", label: "Discounts & Offers", icon: Sparkles },
   { href: "/seller/orders", label: "Orders", icon: ShoppingBag },
   { href: "/seller/products/new", label: "Add Product", icon: PlusCircle },
   { href: "/seller/payments", label: "Payment Numbers", icon: CreditCard },

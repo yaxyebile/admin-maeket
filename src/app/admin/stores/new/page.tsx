@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -19,11 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Utensils } from "lucide-react";
 
 export default function RegisterStorePage() {
   const router = useRouter();
   const [sellers, setSellers] = useState<Profile[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [isRestaurant, setIsRestaurant] = useState(false);
   const [form, setForm] = useState({
     name: "",
     logo: "",
@@ -39,7 +42,7 @@ export default function RegisterStorePage() {
     supabase
       .from("profiles")
       .select("*")
-      .eq("role", "seller")
+      .in("role", ["seller", "restaurant", "admin"])
       .then(({ data }) => setSellers((data as Profile[]) ?? []));
   }, []);
 
@@ -65,18 +68,19 @@ export default function RegisterStorePage() {
       rating: 0,
       followers: 0,
       has_delivery: true,
+      is_restaurant: isRestaurant,
     });
     setSubmitting(false);
     if (error) toast.error(error.message);
     else {
-      toast.success("Store registered");
+      toast.success("Store registered successfully");
       router.push("/admin/stores");
     }
   };
 
   return (
     <div>
-      <PageHeader title="Register Store" description="Create a new store" />
+      <PageHeader title="Register Store" description="Create a new store or restaurant" />
       <Card className="max-w-2xl">
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,6 +92,28 @@ export default function RegisterStorePage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
+
+            {/* Is Restaurant Switch */}
+            <div className="flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50/50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-600 text-white">
+                  <Utensils className="h-5 w-5" />
+                </div>
+                <div>
+                  <Label className="text-sm font-bold text-slate-900 cursor-pointer">
+                    🍔 Dukaankani waa Maqaayad (Restaurant & Fast Food)
+                  </Label>
+                  <p className="text-xs text-slate-500">
+                    Waxaa loo isticmaalayaa POS system-ka iyo menu-yada cuntada
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={isRestaurant}
+                onCheckedChange={setIsRestaurant}
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Logo URL</Label>
@@ -123,18 +149,18 @@ export default function RegisterStorePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Owner (Seller)</Label>
+              <Label>Owner (Seller / Restaurant Manager)</Label>
               <Select
                 value={form.owner_id}
                 onValueChange={(v) => setForm({ ...form, owner_id: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select seller" />
+                  <SelectValue placeholder="Select seller/manager" />
                 </SelectTrigger>
                 <SelectContent>
                   {sellers.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name} ({s.email})
+                      {s.name} ({s.email}) - {s.role}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -160,8 +186,8 @@ export default function RegisterStorePage() {
                 />
               </div>
             </div>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Creating..." : "Register Store"}
+            <Button type="submit" disabled={submitting} className="w-full bg-primary">
+              {submitting ? "Creating..." : "Register Store / Restaurant"}
             </Button>
           </form>
         </CardContent>

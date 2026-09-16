@@ -8,6 +8,7 @@ import { useSellerStore } from "@/hooks/use-seller-store";
 import { PageHeader } from "@/components/page-header";
 import { OrderCard } from "@/components/order-card";
 import { TableSkeleton } from "@/components/loading-skeleton";
+import { toast } from "sonner";
 
 export default function SellerOrdersPage() {
   const { store, loading: storeLoading } = useSellerStore();
@@ -23,6 +24,7 @@ export default function SellerOrdersPage() {
       .from("orders")
       .select("*")
       .in("status", [
+        "pending",
         "paymentConfirmed",
         "approved",
         "outForDelivery",
@@ -35,6 +37,20 @@ export default function SellerOrdersPage() {
     setOrders(filterOrdersForStore(all, store.id));
     setLoading(false);
   }, [store]);
+
+  const handleApproveOrder = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "approved" })
+      .eq("id", orderId);
+
+    if (error) {
+      toast.error(`Cilad ayaa dhacday: ${error.message}`);
+    } else {
+      toast.success("✅ Dalabka waa la ansixiyay! Qaybta diyaarinta/delivery ayaad u gudbisay.");
+      load();
+    }
+  };
 
   useEffect(() => {
     if (!storeLoading) load();
@@ -50,7 +66,7 @@ export default function SellerOrdersPage() {
     <div>
       <PageHeader
         title="Orders"
-        description="Qaybta dukaankaaga — hal dalab wadajir ah (dukaamo badan)"
+        description="Qaybta dukaankaaga — Ansixi dalabyada cusub ka hor intaan loo dirin delivery"
       />
       {loading ? (
         <TableSkeleton />
@@ -63,7 +79,7 @@ export default function SellerOrdersPage() {
               key={o.id}
               order={o}
               sellerStoreId={store!.id}
-              readOnly
+              onApproveSellerOrder={() => handleApproveOrder(o.id)}
             />
           ))}
         </div>

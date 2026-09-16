@@ -59,6 +59,7 @@ export function ProductsSubNav() {
   const pathname = usePathname();
   const links = [
     { href: "/admin/products", label: "Overview", exact: true },
+    { href: "/admin/categories", label: "Qaybaha (Categories)" },
     { href: "/admin/products/pending", label: "Pending" },
     { href: "/admin/products/all", label: "All" },
     { href: "/admin/products/new", label: "Add New" },

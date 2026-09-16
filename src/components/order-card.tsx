@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { CheckCircle2, Truck, Store } from "lucide-react";
+import { CheckCircle2, Truck, Store, AlertTriangle } from "lucide-react";
 
 interface OrderCardProps {
   order: Order;
@@ -27,6 +27,7 @@ interface OrderCardProps {
   /** Hal confirm: seller + delivery */
   onConfirmOrder?: () => void;
   onApprove?: () => void;
+  onApproveSellerOrder?: () => void;
   onCancel?: () => void;
   confirming?: boolean;
   readOnly?: boolean;
@@ -41,6 +42,7 @@ export function OrderCard({
   onDeliveryChange,
   onConfirmOrder,
   onApprove,
+  onApproveSellerOrder,
   onCancel,
   confirming,
   readOnly,
@@ -72,11 +74,86 @@ export function OrderCard({
             {multiStore && (
               <Badge variant="secondary">{storeCount} dukaan</Badge>
             )}
+            {(() => {
+              const rawFulfillment = String(
+                order.fulfillment_type ||
+                (order as any).delivery_type ||
+                (order as any).shipping_method ||
+                ""
+              ).toLowerCase();
+              const isPickup =
+                rawFulfillment === "pickup" ||
+                rawFulfillment.includes("iska soo doono") ||
+                rawFulfillment.includes("pick") ||
+                (order as any).is_pickup === true;
+
+              return isPickup ? (
+                <Badge className="bg-emerald-600 text-white font-extrabold text-xs">
+                  🚶‍♂️ PICKUP (ISKA SOO DOONO)
+                </Badge>
+              ) : (
+                <Badge className="bg-blue-600 text-white font-bold text-xs">
+                  🚚 GAARSIIN
+                </Badge>
+              );
+            })()}
             <OrderStatusBadge status={order.status} />
           </div>
         </div>
 
         <div className="space-y-4 px-6 pb-6">
+          {/* Driver Cancellation Warning Banner for Admin */}
+          {order.cancelled_by_driver_name && !sellerStoreId && (
+            <div className="rounded-2xl border border-red-300 bg-red-50/90 p-4 space-y-3 shadow-xs">
+              <div className="flex items-start gap-2.5 text-red-950 font-extrabold text-sm">
+                <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5 animate-bounce" />
+                <div>
+                  <p className="text-red-900 font-extrabold">
+                    ⚠️ Wadaha &quot;{order.cancelled_by_driver_name}&quot; wuxuu kansalay/fasaxay gaarsiinta dalabkan.
+                  </p>
+                  <p className="text-xs text-red-700 font-medium mt-0.5">
+                    Fadlan u xilsaar driver kale oo furan si alaabta loogu gaarsiiyo macmiilka.
+                  </p>
+                </div>
+              </div>
+
+              {onDeliveryChange && deliveryStaff.length > 0 && (
+                <div className="pt-2 border-t border-red-200/80 space-y-2">
+                  <p className="text-xs font-bold text-red-950 flex items-center gap-1">
+                    <Truck className="h-3.5 w-3.5 text-red-600" />
+                    Ku xilsaar Driver kale (Re-assign):
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {deliveryStaff.map((d) => (
+                      <Button
+                        key={d.id}
+                        type="button"
+                        size="sm"
+                        variant={selectedDelivery === d.id ? "default" : "outline"}
+                        className={`rounded-xl text-xs font-bold ${selectedDelivery === d.id
+                            ? "bg-red-600 text-white hover:bg-red-700"
+                            : "bg-white border-red-200 text-slate-800 hover:bg-red-100"
+                          }`}
+                        onClick={() => onDeliveryChange(d.id)}
+                      >
+                        👨‍🔧 {d.name}
+                      </Button>
+                    ))}
+                    {onApprove && selectedDelivery && (
+                      <Button
+                        size="sm"
+                        onClick={onApprove}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs gap-1 shadow-sm"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Xaqiiji & U Dir Driver-kan
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {!sellerStoreId ? (
             <OrderCustomerPanel
               order={order}
@@ -253,9 +330,20 @@ export function OrderCard({
               </p>
             )}
 
-          {readOnly && sellerStoreId && order.status !== "pending" && (
-            <Badge variant="success" className="w-fit">
-              Seller — dalabka waa kuu yimid
+          {sellerStoreId && (order.status === "paymentConfirmed" || order.status === "pending") && onApproveSellerOrder && (
+            <div className="pt-2">
+              <Button
+                onClick={onApproveSellerOrder}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold gap-2 rounded-xl text-xs"
+              >
+                <CheckCircle2 className="h-4 w-4" /> ✅ Aqbal Dalabka (Approve Order & Start Preparing)
+              </Button>
+            </div>
+          )}
+
+          {sellerStoreId && order.status === "approved" && (
+            <Badge className="w-fit bg-emerald-600/10 border border-emerald-500/30 text-emerald-700 font-bold">
+              ✅ Dalabka waa la ansixiyay (Approved by Seller)
             </Badge>
           )}
 

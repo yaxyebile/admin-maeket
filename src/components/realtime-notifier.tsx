@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
-import { ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function RealtimeNotifier() {
@@ -71,6 +70,38 @@ export function RealtimeNotifier() {
                             },
                         },
                     });
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "orders",
+                },
+                (payload) => {
+                    const updatedOrder = payload.new;
+                    const oldOrder = payload.old;
+
+                    // Check if driver just cancelled/released this order
+                    if (
+                        user.role === "admin" &&
+                        updatedOrder.cancelled_by_driver_name &&
+                        (!oldOrder || oldOrder.cancelled_by_driver_name !== updatedOrder.cancelled_by_driver_name)
+                    ) {
+                        playChime();
+                        const orderShortId = updatedOrder.id ? updatedOrder.id.slice(0, 8) : "";
+                        toast.error(`Driver ayaa kansalay gaarsiinta ⚠️`, {
+                            description: `Wadaha ${updatedOrder.cancelled_by_driver_name} wuxuu fasaxay dalabka #${orderShortId}`,
+                            duration: 15000,
+                            action: {
+                                label: "Re-assign Driver 👨‍🔧",
+                                onClick: () => {
+                                    router.push("/admin/orders");
+                                },
+                            },
+                        });
+                    }
                 }
             )
             .subscribe();

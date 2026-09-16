@@ -12,6 +12,7 @@ import {
   Users,
   Image,
   AlertCircle,
+  Utensils,
 } from "lucide-react";
 import { fetchDashboardStats } from "@/lib/admin-stats";
 import { formatCurrency } from "@/lib/utils";
@@ -42,7 +43,7 @@ export default function AdminDashboardPage() {
     <div>
       <PageHeader
         title="Dashboard"
-        description="Mogadishu Market — overview (light)"
+        description="Mogadishu Market & Restaurant System — overview"
       />
 
       {loading ? (
@@ -79,6 +80,20 @@ export default function AdminDashboardPage() {
       <h2 className="mb-4 mt-10 text-lg font-semibold">Quick links</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SectionHubCard
+          href="/admin/restaurants"
+          title="🍔 Maqaayadaha (Restaurants)"
+          description="Command Center for Restaurants"
+          icon={Utensils}
+          accent="bg-rose-100 text-rose-600"
+        />
+        <SectionHubCard
+          href="/restaurant"
+          title="Restaurant POS Portal"
+          description="Direct manual order creation"
+          icon={Utensils}
+          accent="bg-rose-100 text-rose-600"
+        />
+        <SectionHubCard
           href="/admin/orders/pending"
           title="Pending orders"
           count={loading ? undefined : stats.pendingOrders}
@@ -111,7 +126,7 @@ export default function AdminDashboardPage() {
         />
         <SectionHubCard
           href="/admin/stores/new"
-          title="Register store"
+          title="Register store / restaurant"
           icon={Store}
         />
         <SectionHubCard

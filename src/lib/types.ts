@@ -1,4 +1,5 @@
-export type UserRole = "admin" | "seller" | "delivery" | "user";
+export type UserRole = "admin" | "seller" | "restaurant" | "delivery" | "user";
+export type FulfillmentType = "delivery" | "pickup";
 
 export type OrderStatus =
   | "pending"
@@ -8,7 +9,7 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
-export type PaymentMethod = "evcPlus" | "edahab";
+export type PaymentMethod = "evcPlus" | "edahab" | "cash";
 
 export interface Profile {
   id: string;
@@ -16,8 +17,9 @@ export interface Profile {
   email: string;
   password: string;
   role: UserRole;
-  store_id: string | null;
-  phone: string | null;
+  store_id?: string | null;
+  phone?: string | null;
+  created_at?: string;
 }
 
 export interface Store {
@@ -34,6 +36,7 @@ export interface Store {
   has_delivery: boolean;
   evc_number: string | null;
   edahab_number: string | null;
+  is_restaurant?: boolean;
 }
 
 export interface Product {
@@ -41,6 +44,8 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  original_price?: number | null;
+  discount_expires_at?: string | null; // ISO string expiration date/time
   image: string;
   images: string[];        // up to 4 image URLs (JSONB)
   video_url: string | null; // YouTube / MP4 / Supabase URL
@@ -88,6 +93,7 @@ export interface OrderItem {
   productId: string;
   productName: string;
   price: number;
+  originalPrice?: number | null;
   quantity: number;
   storeId: string;
   storeName: string;
@@ -110,8 +116,12 @@ export interface Order {
   customer_name: string | null;
   customer_phone: string | null;
   customer_address: string | null;
-  /** Isku xir dalabaadyada hal checkout (dukaamo badan) */
   checkout_group_id?: string | null;
+  is_pos_order?: boolean;
+  fulfillment_type?: FulfillmentType;
+  delivery_fee?: number;
+  cancelled_by_driver_name?: string | null;
+  driver_cancelled_at?: string | null;
 }
 
 export interface Category {

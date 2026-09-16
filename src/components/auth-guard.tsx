@@ -11,11 +11,17 @@ export function AuthGuard({
   allowedRole,
 }: {
   children: React.ReactNode;
-  allowedRole: UserRole;
+  allowedRole: UserRole | UserRole[];
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  const isAllowed = user
+    ? Array.isArray(allowedRole)
+      ? allowedRole.includes(user.role)
+      : user.role === allowedRole
+    : false;
 
   useEffect(() => {
     if (loading) return;
@@ -23,25 +29,28 @@ export function AuthGuard({
       router.replace("/login");
       return;
     }
-    if (user.role !== allowedRole) {
+
+    if (!isAllowed) {
       if (user.role === "admin") router.replace("/admin");
+      else if (user.role === "restaurant") router.replace("/restaurant");
       else if (user.role === "seller") router.replace("/seller");
-      else router.replace("/login");
+      else if (user.role === "delivery") router.replace("/delivery");
+      else router.replace("/checkout");
     }
-  }, [user, loading, router, allowedRole, pathname]);
+  }, [user, loading, router, isAllowed, pathname]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-8">
+      <div className="flex min-h-screen items-center justify-center p-8 bg-slate-950">
         <div className="w-full max-w-md space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-12 w-full bg-slate-800" />
+          <Skeleton className="h-64 w-full bg-slate-800" />
         </div>
       </div>
     );
   }
 
-  if (!user || user.role !== allowedRole) return null;
+  if (!user || !isAllowed) return null;
 
   return <>{children}</>;
 }

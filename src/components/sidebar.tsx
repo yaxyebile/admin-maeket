@@ -52,10 +52,10 @@ export function Sidebar({ items, title }: SidebarProps) {
               href={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all",
                 active
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? "bg-[#C4F4FF] text-[#0A1C28] shadow-sm border border-[#9DE6FF]"
+                  : "text-slate-600 hover:bg-[#D2F7FF]/50 hover:text-[#0A1C28]"
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" />
