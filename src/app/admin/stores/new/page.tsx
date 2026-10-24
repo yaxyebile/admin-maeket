@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { ImageUpload } from "@/components/image-upload";
 import { toast } from "sonner";
 import { Utensils } from "lucide-react";
 
@@ -115,22 +116,18 @@ export default function RegisterStorePage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Logo URL</Label>
-                <Input
-                  value={form.logo}
-                  onChange={(e) => setForm({ ...form, logo: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Banner URL</Label>
-                <Input
-                  value={form.banner}
-                  onChange={(e) =>
-                    setForm({ ...form, banner: e.target.value })
-                  }
-                />
-              </div>
+              <ImageUpload
+                label="Store Logo"
+                value={form.logo}
+                onChange={(url) => setForm({ ...form, logo: url })}
+                bucket="logos"
+              />
+              <ImageUpload
+                label="Store Banner"
+                value={form.banner}
+                onChange={(url) => setForm({ ...form, banner: url })}
+                bucket="banners"
+              />
             </div>
             <div className="space-y-2">
               <Label>Description</Label>

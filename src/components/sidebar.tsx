@@ -39,8 +39,8 @@ export function Sidebar({ items, title }: SidebarProps) {
             "/admin/orders",
             "/admin/products",
             "/admin/stores",
-            "/admin/real-estate",
-            "/admin/second-hand",
+            "/real-estate",
+            "/second-hand",
           ]);
           const active = exactOnly.has(item.href)
             ? pathname === item.href

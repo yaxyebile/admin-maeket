@@ -49,6 +49,33 @@ export default function AdminUsersPage() {
         .eq("id", userId);
 
       if (error) throw error;
+      if (role === "second_hand") {
+        const { data: secondHandManagers } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "second_hand");
+
+        if (secondHandManagers?.length === 1) {
+          await supabase
+            .from("second_hand_items")
+            .update({ owner_id: secondHandManagers[0].id })
+            .is("owner_id", null);
+
+          const { data: ownedItems } = await supabase
+            .from("second_hand_items")
+            .select("title")
+            .eq("owner_id", secondHandManagers[0].id);
+          const ownedTitles = [...new Set((ownedItems ?? []).map((item) => item.title).filter(Boolean))];
+
+          if (ownedTitles.length > 0) {
+            await supabase
+              .from("second_hand_bookings")
+              .update({ owner_id: secondHandManagers[0].id })
+              .in("item_title", ownedTitles)
+              .is("owner_id", null);
+          }
+        }
+      }
       toast.success("User role updated successfully");
       load();
     } catch (err: any) {
@@ -158,6 +185,8 @@ export default function AdminUsersPage() {
                       >
                         <option value="admin">Super Admin</option>
                         <option value="seller">Store Manager (Seller)</option>
+                        <option value="real_estate">Real Estate Manager</option>
+                        <option value="second_hand">Second-Hand Manager</option>
                         <option value="delivery">Delivery staff</option>
                         <option value="user">User (Customer)</option>
                       </select>

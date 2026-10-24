@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DualImageInput } from "@/components/dual-image-input";
 import { toast } from "sonner";
 import { Settings, Save, Utensils } from "lucide-react";
 
@@ -108,23 +109,19 @@ export default function RestaurantSettingsPage() {
                         />
                     </div>
 
-                    <div className="grid gap-4 grid-cols-2">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-slate-300">Logo URL</Label>
-                            <Input
-                                value={form.logo}
-                                onChange={(e) => setForm({ ...form, logo: e.target.value })}
-                                className="bg-slate-950 border-slate-800 rounded-xl text-xs text-white"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-slate-300">Cover Banner URL</Label>
-                            <Input
-                                value={form.banner}
-                                onChange={(e) => setForm({ ...form, banner: e.target.value })}
-                                className="bg-slate-950 border-slate-800 rounded-xl text-xs text-white"
-                            />
-                        </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <DualImageInput
+                            label="Logo-ga Maqaayada (Logo)"
+                            value={form.logo}
+                            onChange={(url) => setForm({ ...form, logo: url })}
+                            bucket="logos"
+                        />
+                        <DualImageInput
+                            label="Banner-ka Maqaayada (Cover Banner)"
+                            value={form.banner}
+                            onChange={(url) => setForm({ ...form, banner: url })}
+                            bucket="banners"
+                        />
                     </div>
 
                     <div className="grid gap-4 grid-cols-2">

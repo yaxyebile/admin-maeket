@@ -9,9 +9,6 @@ import {
   MessageSquare,
   Clock,
   AlertCircle,
-  Home,
-  Tags,
-  Building,
   Calendar,
   Wrench,
   Truck,
@@ -19,6 +16,7 @@ import {
   PackageCheck,
   Utensils,
   DollarSign,
+  Youtube,
 } from "lucide-react";
 import type { NavItem } from "@/components/sidebar";
 
@@ -38,17 +36,15 @@ export const adminNavItems: NavItem[] = [
   { href: "/admin/categories", label: "Categories (Qaybaha)", icon: Package },
   { href: "/admin/stores", label: "Stores", icon: Store },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/promos", label: "Promos", icon: Image },
+  { href: "/admin/promos", label: "Promos (Banners)", icon: Image },
+  { href: "/admin/promo-videos", label: "YouTube Promo Studio", icon: Youtube },
   { href: "/admin/revenue", label: "Revenue & Commission", icon: CreditCard },
   { href: "/admin/payments", label: "Payments (WAAFI)", icon: CreditCard },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-  { href: "/admin/real-estate", label: "Real Estate", icon: Home },
-  { href: "/admin/real-estate/bookings", label: "Real Estate Bookings", icon: Building },
-  { href: "/admin/second-hand", label: "Second-Hand", icon: Tags },
-  { href: "/admin/second-hand/bookings", label: "Second-Hand Deposits", icon: Calendar },
   { href: "/admin/technicians", label: "Technicians Directory", icon: Wrench },
   { href: "/admin/technicians/pricing", label: "Lacagaha Farsamada (Rates)", icon: DollarSign },
   { href: "/admin/technicians/bookings", label: "Technician Bookings", icon: Calendar },
+  { href: "/admin/technicians/promo", label: "Technicians Promo Video", icon: Youtube },
   { href: "/admin/cargo", label: "Cargo Ads", icon: Truck },
   { href: "/admin/broadcast", label: "Notifications", icon: Bell },
 ];

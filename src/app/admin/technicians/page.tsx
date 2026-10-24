@@ -23,8 +23,23 @@ import {
     Users,
     X,
     CheckCircle,
+    Youtube,
+    Play,
+    Sparkles,
+    ExternalLink,
+    Video,
+    Save,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+    getTechnicianPromoSettings,
+    saveTechnicianPromoSettings,
+    getYouTubeEmbedUrl,
+    getYouTubeVideoId,
+    detectYouTubeUrlType,
+    DEFAULT_TECHNICIAN_PROMO,
+    type TechnicianPromoSettings,
+} from "@/lib/technician-promo";
 
 export interface Technician {
     id: string;
@@ -44,6 +59,15 @@ export default function TechniciansPage() {
     const [editingTech, setEditingTech] = useState<Technician | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
+    // Promo Video States
+    const [promo, setPromo] = useState<TechnicianPromoSettings>(DEFAULT_TECHNICIAN_PROMO);
+    const [showEditPromoModal, setShowEditPromoModal] = useState(false);
+    const [promoUrl, setPromoUrl] = useState(DEFAULT_TECHNICIAN_PROMO.videoUrl);
+    const [promoTitle, setPromoTitle] = useState(DEFAULT_TECHNICIAN_PROMO.title);
+    const [promoDesc, setPromoDesc] = useState(DEFAULT_TECHNICIAN_PROMO.desc);
+    const [promoTag, setPromoTag] = useState(DEFAULT_TECHNICIAN_PROMO.tag);
+    const [savingPromo, setSavingPromo] = useState(false);
+
     // Form states
     const [name, setName] = useState("");
     const [specialty, setSpecialty] = useState("Korontada");
@@ -54,6 +78,7 @@ export default function TechniciansPage() {
     const fetchTechnicians = useCallback(async () => {
         setLoading(true);
         try {
+            // Load technicians
             const { data, error } = await supabase
                 .from("technicians")
                 .select("*")
@@ -66,6 +91,14 @@ export default function TechniciansPage() {
             } else {
                 setTechnicians(data || []);
             }
+
+            // Load promo settings
+            const promoSettings = await getTechnicianPromoSettings();
+            setPromo(promoSettings);
+            setPromoUrl(promoSettings.videoUrl);
+            setPromoTitle(promoSettings.title);
+            setPromoDesc(promoSettings.desc);
+            setPromoTag(promoSettings.tag);
         } catch (err: any) {
             console.warn("Error loading technicians:", err?.message);
         } finally {
@@ -200,6 +233,39 @@ export default function TechniciansPage() {
         (t.location || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleSavePromo = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const videoId = getYouTubeVideoId(promoUrl);
+        if (!videoId) {
+            toast.error("Fadlan geli link YouTube sax ah (Shorts, Watch ama Embed).");
+            return;
+        }
+
+        setSavingPromo(true);
+        try {
+            const updated = {
+                videoUrl: promoUrl.trim(),
+                title: promoTitle.trim() || DEFAULT_TECHNICIAN_PROMO.title,
+                desc: promoDesc.trim() || DEFAULT_TECHNICIAN_PROMO.desc,
+                tag: promoTag.trim() || DEFAULT_TECHNICIAN_PROMO.tag,
+            };
+
+            await saveTechnicianPromoSettings(updated);
+            setPromo(updated);
+            setShowEditPromoModal(false);
+            toast.success("✅ Xayeysiiska muuqaalka farsamada waa la cusboonaysiiyay!");
+        } catch (err: any) {
+            toast.error("Failed to save promo: " + err.message);
+        } finally {
+            setSavingPromo(false);
+        }
+    };
+
+    const promoVideoId = getYouTubeVideoId(promo.videoUrl);
+    const promoEmbedUrl = getYouTubeEmbedUrl(promo.videoUrl);
+    const modalVideoId = getYouTubeVideoId(promoUrl);
+    const modalEmbedUrl = getYouTubeEmbedUrl(promoUrl);
+
     return (
         <div className="space-y-6 pb-12">
             {/* Top Header & Sub-Navigation Tabs */}
@@ -220,26 +286,236 @@ export default function TechniciansPage() {
             </div>
 
             {/* Navigation Quick Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold overflow-x-auto">
                 <Link
                     href="/admin/technicians"
-                    className="px-4 py-2 rounded-xl bg-primary text-white shadow-sm flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-primary text-white shadow-sm flex items-center gap-2 whitespace-nowrap"
                 >
                     <Users className="h-4 w-4" /> 👨‍🔧 Farsamo Yaqaanno ({technicians.length})
                 </Link>
                 <Link
                     href="/admin/technicians/pricing"
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
                 >
                     <DollarSign className="h-4 w-4 text-emerald-600" /> 💵 Lacagaha Farsamada (Rates)
                 </Link>
                 <Link
                     href="/admin/technicians/bookings"
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
                 >
                     <Calendar className="h-4 w-4 text-purple-600" /> 📅 Dalabyada (Bookings)
                 </Link>
+                <Link
+                    href="/admin/technicians/promo"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                    <span className="text-red-600 font-bold">🎬</span> Promo Video (Xayeysiin)
+                </Link>
             </div>
+
+            {/* FEATURED: PROMOTIONAL YOUTUBE VIDEO AD CARD (WITH BADAL / EDIT BUTTON) */}
+            <div className="rounded-2xl border border-red-200/80 bg-gradient-to-r from-red-50/70 via-white to-slate-50 p-4 sm:p-5 shadow-sm space-y-4">
+                {/* Header row with Badal / Edit Button */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-red-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm shadow-red-200">
+                            <Youtube className="h-5 w-5" />
+                        </span>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase text-red-900 tracking-wider">
+                                    Muuqaalka Xayeysiiska Farsamada (YouTube Promo Ad)
+                                </span>
+                                <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] font-black uppercase tracking-wider">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse mr-1 inline-block" />
+                                    {promo.tag || "WAAFI PAY API INTEGRATED"}
+                                </Badge>
+                            </div>
+                            <span className="text-[11px] text-slate-500 font-medium">
+                                Toos looga aqrinayaa Supabase database-ka • Ka muuqda qaybta Farsamo Yaqaano
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Quick In-App Edit Button */}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={() => {
+                                setPromoUrl(promo.videoUrl);
+                                setPromoTitle(promo.title);
+                                setPromoDesc(promo.desc);
+                                setPromoTag(promo.tag);
+                                setShowEditPromoModal(true);
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow-sm gap-1.5 cursor-pointer"
+                        >
+                            <Edit className="h-3.5 w-3.5" /> Badal / Edit ✏️
+                        </Button>
+                        <Link
+                            href="/admin/technicians/promo"
+                            className="text-xs font-bold text-slate-600 hover:text-red-600 hover:underline px-2 py-1 rounded transition-colors hidden sm:inline-flex items-center gap-1"
+                        >
+                            Studio <ExternalLink className="h-3 w-3" />
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Promo Card Body */}
+                <div className="grid gap-4 md:grid-cols-12 items-center">
+                    {/* Embedded 16:9 Video Player */}
+                    <div className="md:col-span-5 lg:col-span-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video relative shadow-inner">
+                        {promoVideoId ? (
+                            <iframe
+                                src={promoEmbedUrl}
+                                title={promo.title}
+                                className="absolute inset-0 w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+                                Muuqaal ma diyaarsana
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Text Details & Controls */}
+                    <div className="md:col-span-7 lg:col-span-8 space-y-2">
+                        <h4 className="text-base font-black text-slate-900 tracking-tight">
+                            {promo.title}
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                            {promo.desc}
+                        </p>
+                        <div className="pt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+                            <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 truncate max-w-xs">
+                                🔗 {promo.videoUrl}
+                            </span>
+                            <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> Live & Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* IN-APP QUICK EDIT MODAL (BADAL / EDIT POPUP) */}
+            {showEditPromoModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in-50">
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                        {/* Modal Header */}
+                        <div className="px-6 py-4 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Youtube className="h-5 w-5" />
+                                <h3 className="font-extrabold text-base">
+                                    Wax Ka Bedel Xayeysiiska Muuqaalka (Quick Edit)
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setShowEditPromoModal(false)}
+                                className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <form onSubmit={handleSavePromo} className="p-6 space-y-4 overflow-y-auto flex-1">
+                            {/* YouTube URL */}
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                                    <span>YouTube Link * (Shorts, Watch, ama Embed)</span>
+                                    {modalVideoId && (
+                                        <span className="text-emerald-600 font-mono text-[11px]">
+                                            ID: {modalVideoId}
+                                        </span>
+                                    )}
+                                </Label>
+                                <Input
+                                    value={promoUrl}
+                                    onChange={(e) => setPromoUrl(e.target.value)}
+                                    placeholder="https://www.youtube.com/watch?v=fq4N0hgOWzU"
+                                    className="font-mono text-xs"
+                                    required
+                                />
+                            </div>
+
+                            {/* Live Preview inside Modal */}
+                            {modalVideoId && (
+                                <div className="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-black relative max-h-48 mx-auto">
+                                    <iframe
+                                        src={modalEmbedUrl}
+                                        title="Preview"
+                                        className="w-full h-full border-0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                </div>
+                            )}
+
+                            {/* Title */}
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-slate-700">
+                                    Cinwaanka Xayeysiiska (Title) *
+                                </Label>
+                                <Input
+                                    value={promoTitle}
+                                    onChange={(e) => setPromoTitle(e.target.value)}
+                                    placeholder="Farsamo Yaqaano Xirfad Leh"
+                                    required
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-slate-700">
+                                    Faahfaahinta (Description)
+                                </Label>
+                                <textarea
+                                    value={promoDesc}
+                                    onChange={(e) => setPromoDesc(e.target.value)}
+                                    placeholder="Dooro adeegga aad u baahan tahay, si automatic ahna ugu bixi EVC Plus."
+                                    className="w-full min-h-[70px] p-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary"
+                                    rows={2}
+                                />
+                            </div>
+
+                            {/* Tag */}
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-slate-700">
+                                    Calaamadda / Badge Tag
+                                </Label>
+                                <Input
+                                    value={promoTag}
+                                    onChange={(e) => setPromoTag(e.target.value)}
+                                    placeholder="WAAFI PAY API INTEGRATED"
+                                    className="font-mono uppercase text-xs"
+                                />
+                            </div>
+
+                            {/* Footer Buttons */}
+                            <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowEditPromoModal(false)}
+                                    className="text-xs"
+                                >
+                                    Kansal
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={savingPromo}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs gap-1.5 px-5"
+                                >
+                                    <Save className="h-4 w-4" />
+                                    {savingPromo ? "Keydinaya..." : "Keydi Badalaada (Save)"}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Search Filter Bar */}
             <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
@@ -386,10 +662,10 @@ export default function TechniciansPage() {
                                             </Badge>
                                             <Badge
                                                 className={`text-[10px] font-bold ${t.level === "Heer Sare"
-                                                        ? "bg-amber-100 text-amber-800 border-amber-200"
-                                                        : t.level === "Dhex Dhexaad"
-                                                            ? "bg-purple-100 text-purple-800 border-purple-200"
-                                                            : "bg-slate-100 text-slate-700 border-slate-200"
+                                                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                                                    : t.level === "Dhex Dhexaad"
+                                                        ? "bg-purple-100 text-purple-800 border-purple-200"
+                                                        : "bg-slate-100 text-slate-700 border-slate-200"
                                                     }`}
                                             >
                                                 <Award className="h-3 w-3 mr-1 inline" />

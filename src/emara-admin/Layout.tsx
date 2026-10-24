@@ -19,7 +19,8 @@ import {
     Menu,
     X,
     User,
-    Activity
+    Activity,
+    Youtube
 } from "lucide-react";
 
 interface SidebarItem {
@@ -48,6 +49,7 @@ export default function Layout() {
         { name: "Technician Bookings", path: "/technician-bookings", icon: Calendar, roles: ["admin"] },
         { name: "Cargo Ads", path: "/cargo", icon: Truck, roles: ["admin"] },
         { name: "Promos & Banners", path: "/promos", icon: Image, roles: ["admin"] },
+        { name: "YouTube Promo Videos", path: "/promo-videos", icon: Youtube, roles: ["admin"] },
         { name: "Revenue Reports", path: "/revenue", icon: CreditCard, roles: ["admin"] },
         { name: "Broadcast Notifications", path: "/notifications", icon: Bell, roles: ["admin"] },
 

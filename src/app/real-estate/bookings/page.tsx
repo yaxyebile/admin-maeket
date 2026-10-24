@@ -2,39 +2,71 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/auth-context";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CheckCircle, XCircle, CreditCard, Search } from "lucide-react";
+import { CheckCircle, XCircle, CreditCard, DollarSign, Search } from "lucide-react";
 import { toast } from "sonner";
 
-export default function SecondHandBookingsPage() {
+export default function RealEstateBookingsPage() {
+    const { user } = useAuth();
     const [bookings, setBookings] = useState<any[]>([]);
+    const [ownedPropertyTitles, setOwnedPropertyTitles] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        fetchBookings();
-    }, []);
+        if (!user?.id) return;
+        fetchBookings(user.id);
+    }, [user?.id]);
 
-    async function fetchBookings() {
+    async function fetchBookings(ownerId: string) {
         setLoading(true);
+        const { data: properties, error: propertiesError } = await supabase
+            .from("property_listings")
+            .select("title")
+            .eq("owner_id", ownerId);
+
+        if (propertiesError) {
+            setBookings([]);
+            setOwnedPropertyTitles([]);
+            setLoading(false);
+            toast.error("Guryahaaga lama soo qaadi karin: " + propertiesError.message);
+            return;
+        }
+
+        const titles = [...new Set((properties ?? []).map((property) => property.title).filter(Boolean))];
+        setOwnedPropertyTitles(titles);
+        if (titles.length === 0) {
+            setBookings([]);
+            setLoading(false);
+            return;
+        }
+
         const { data, error } = await supabase
-            .from("second_hand_bookings")
+            .from("property_bookings")
             .select("*")
+            .in("property_title", titles)
             .order("created_at", { ascending: false });
 
         if (!error && data) {
             setBookings(data);
+        } else if (error) {
+            setBookings([]);
+            toast.error("Bookings-ka lama soo qaadi karin: " + error.message);
         }
         setLoading(false);
     }
 
     async function updateStatus(id: string, status: string) {
+        if (!user?.id || ownedPropertyTitles.length === 0) return;
         const { error } = await supabase
-            .from("second_hand_bookings")
+            .from("property_bookings")
             .update({ status })
-            .eq("id", id);
+            .eq("id", id)
+            .in("property_title", ownedPropertyTitles);
 
         if (!error) {
             toast.success(
@@ -42,27 +74,41 @@ export default function SecondHandBookingsPage() {
                     ? "🎉 Lacagtii dhimanayd waa la dhamaystiray (Fully Paid)!"
                     : `Status-ka waxaa loo baddalay ${status}`
             );
-            fetchBookings();
+            fetchBookings(user.id);
         } else {
             toast.error("Failed to update status: " + error.message);
         }
     }
 
     const filteredBookings = bookings.filter((b) =>
-        (b.item_title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (b.property_title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (b.user_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (b.transaction_phone || "").includes(searchTerm)
+        (b.user_phone || "").includes(searchTerm)
     );
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Second-Hand Bookings (Deposits & Settlements)" description="Manage 10% deposits and remaining balance settlements for second-hand items." />
+            <PageHeader title="Real Estate Bookings (Deposits & Settlements)" description="Manage property reservations, 20% deposit payments, and remaining balance settlements." />
 
-            {/* Search Filter Bar */}
+            {/* Navigation Quick Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold overflow-x-auto">
+                <a
+                    href="/real-estate"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                    🏡 Guryaha & Dhulka
+                </a>
+                <a
+                    href="/real-estate/bookings"
+                    className="px-4 py-2 rounded-xl bg-primary text-white shadow-sm flex items-center gap-2 whitespace-nowrap"
+                >
+                    📅 Dalabyada (Bookings) ({bookings.length})
+                </a>
+            </div>
             <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
                 <Search className="h-5 w-5 text-slate-400 ml-2" />
                 <Input
-                    placeholder="Raadi alaabta (Item title), magaca ama telefoonka macmiilka..."
+                    placeholder="Raadi hantida (Property title), magaca ama telefoonka macmiilka..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="border-none focus-visible:ring-0 text-sm"
@@ -74,11 +120,11 @@ export default function SecondHandBookingsPage() {
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-100">
                             <tr>
-                                <th className="py-3 px-4">Item</th>
+                                <th className="py-3 px-4">Property</th>
                                 <th className="py-3 px-4">User Details</th>
-                                <th className="py-3 px-4">Total / Deposit (10%)</th>
-                                <th className="py-3 px-4">Lacagta Dhiman (90%)</th>
-                                <th className="py-3 px-4">Transaction Info</th>
+                                <th className="py-3 px-4">Deposit (20%)</th>
+                                <th className="py-3 px-4">Lacagta Dhiman (80%)</th>
+                                <th className="py-3 px-4">Payment Info</th>
                                 <th className="py-3 px-4">Status</th>
                                 <th className="py-3 px-4 text-right">Actions</th>
                             </tr>
@@ -90,24 +136,25 @@ export default function SecondHandBookingsPage() {
                                 </tr>
                             ) : filteredBookings.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-10 text-slate-500">Wax alaab ah oo raadintaada ku soo baxay ma jiro.</td>
+                                    <td colSpan={7} className="text-center py-10 text-slate-500">Wax iib/boos qabsi ah oo raadintaada ku soo baxay ma jiro.</td>
                                 </tr>
                             ) : (
                                 filteredBookings.map((booking) => {
                                     const depositNum = Number(booking.deposit_amount) || 0;
-                                    const totalPrice = Number(booking.total_price) || (depositNum * 10);
+                                    const totalPrice = Number(booking.total_price) || (depositNum * 5);
                                     const remainingNum = booking.remaining_amount ? Number(booking.remaining_amount) : (totalPrice - depositNum);
                                     const isFullyPaid = booking.status === "fully_paid";
 
                                     return (
                                         <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="py-3 px-4 font-medium text-slate-800">{booking.item_title}</td>
+                                            <td className="py-3 px-4 font-medium text-slate-800">{booking.property_title}</td>
                                             <td className="py-3 px-4">
                                                 <div className="text-slate-800 font-medium">{booking.user_name}</div>
+                                                <div className="text-slate-500 text-xs">{booking.user_phone}</div>
                                             </td>
                                             <td className="py-3 px-4">
-                                                <div className="text-slate-400 text-xs line-through mb-0.5">Total: ${totalPrice.toFixed(2)}</div>
-                                                <div className="font-bold text-slate-900">Deposit: ${depositNum.toFixed(2)} (10%)</div>
+                                                <div className="font-bold text-slate-900">${depositNum.toFixed(2)} (20%)</div>
+                                                <div className="text-[11px] text-slate-400">Total: ${totalPrice.toFixed(2)}</div>
                                             </td>
                                             <td className="py-3 px-4">
                                                 {isFullyPaid ? (
@@ -116,11 +163,12 @@ export default function SecondHandBookingsPage() {
                                                     </span>
                                                 ) : (
                                                     <div className="font-extrabold text-rose-600">
-                                                        ${remainingNum.toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">(90% Dhiman)</span>
+                                                        ${remainingNum.toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">(80% Dhiman)</span>
                                                     </div>
                                                 )}
                                             </td>
                                             <td className="py-3 px-4">
+                                                <div className="text-slate-800 capitalize font-medium">{booking.payment_method}</div>
                                                 <div className="text-slate-500 text-xs">{booking.transaction_phone}</div>
                                             </td>
                                             <td className="py-3 px-4">

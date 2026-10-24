@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "seller" | "restaurant" | "delivery" | "user";
+export type UserRole = "admin" | "seller" | "restaurant" | "delivery" | "user" | "real_estate" | "second_hand";
 export type FulfillmentType = "delivery" | "pickup";
 
 export type OrderStatus =
@@ -59,6 +59,7 @@ export interface Product {
 
 export interface PropertyListing {
   id: string;
+  owner_id?: string | null;
   title: string;
   description: string;
   property_type: string;
@@ -75,6 +76,7 @@ export interface PropertyListing {
 
 export interface SecondHandItem {
   id: string;
+  owner_id?: string | null;
   title: string;
   description: string;
   category: string;

@@ -181,24 +181,30 @@ export default function TechnicianPricingPage() {
             </div>
 
             {/* Navigation Quick Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold overflow-x-auto">
                 <Link
                     href="/admin/technicians"
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
                 >
                     <Users className="h-4 w-4" /> 👨‍🔧 Farsamo Yaqaanno
                 </Link>
                 <Link
                     href="/admin/technicians/pricing"
-                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white shadow-sm flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white shadow-sm flex items-center gap-2 whitespace-nowrap"
                 >
                     <DollarSign className="h-4 w-4" /> 💵 Lacagaha Farsamada (Rates)
                 </Link>
                 <Link
                     href="/admin/technicians/bookings"
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
                 >
                     <Calendar className="h-4 w-4 text-purple-600" /> 📅 Dalabyada (Bookings)
+                </Link>
+                <Link
+                    href="/admin/technicians/promo"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                    <span className="text-red-600 font-bold">🎬</span> Promo Video (Xayeysiin)
                 </Link>
             </div>
 

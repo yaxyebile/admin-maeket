@@ -2,22 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { generateId } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Plus, X, Images, Video, Play } from "lucide-react";
+import { Trash2, Plus, X, Images, Video, Play, Youtube, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { MultiImageUpload } from "@/components/multi-image-upload";
 import { MediaPreviewModal } from "@/components/media-preview-modal";
 import type { PropertyListing } from "@/lib/types";
+import { toast } from "sonner";
+import {
+    getPropertyPromoSettings,
+    getYouTubeEmbedUrl,
+    getYouTubeVideoId,
+    DEFAULT_PROPERTY_PROMO,
+    type PromoVideoSettings,
+} from "@/lib/promo-videos";
 
 export default function RealEstatePage() {
+    const { user } = useAuth();
     const [properties, setProperties] = useState<PropertyListing[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<PropertyListing | null>(null);
+
+    // Promo Video States
+    const [promo, setPromo] = useState<PromoVideoSettings>(DEFAULT_PROPERTY_PROMO);
 
     // Form State
     const [title, setTitle] = useState("");
@@ -31,34 +46,53 @@ export default function RealEstatePage() {
     const [videoUrl, setVideoUrl] = useState("");
 
     useEffect(() => {
-        fetchProperties();
-    }, []);
+        if (!user?.id) return;
+        fetchProperties(user.id);
+        loadPromo();
+    }, [user?.id]);
 
-    async function fetchProperties() {
+    async function loadPromo() {
+        try {
+            const data = await getPropertyPromoSettings();
+            setPromo(data);
+        } catch (e) { }
+    }
+
+    async function fetchProperties(ownerId: string) {
         setLoading(true);
         const { data, error } = await supabase
             .from("property_listings")
             .select("*")
+            .eq("owner_id", ownerId)
             .order("created_at", { ascending: false })
             .limit(50);
 
         if (!error && data) {
             setProperties(data as PropertyListing[]);
+        } else {
+            setProperties([]);
         }
         setLoading(false);
     }
 
     async function handleDelete(id: string) {
+        if (!user?.id) return;
         if (confirm("Are you sure you want to delete this property?")) {
-            await supabase.from("property_listings").delete().eq("id", id);
-            fetchProperties();
+            await supabase.from("property_listings").delete().eq("id", id).eq("owner_id", user.id);
+            fetchProperties(user.id);
         }
     }
 
     async function handleAddProperty(e: React.FormEvent) {
         e.preventDefault();
+        if (!user?.id) {
+            toast.error("Fadlan mar kale gal akoonka Real Estate-ka.");
+            return;
+        }
 
         const { error } = await supabase.from("property_listings").insert([{
+            id: generateId(),
+            owner_id: user.id,
             title,
             description,
             property_type: propertyType,
@@ -76,11 +110,14 @@ export default function RealEstatePage() {
             setShowAddForm(false);
             setTitle(""); setDescription(""); setPrice(""); setLocation("");
             setImages([]); setVideoUrl("");
-            fetchProperties();
+            fetchProperties(user.id);
         } else {
             alert("Failed to add property: " + error.message);
         }
     }
+
+    const promoVideoId = getYouTubeVideoId(promo.videoUrl);
+    const promoEmbedUrl = getYouTubeEmbedUrl(promo.videoUrl);
 
     return (
         <div className="space-y-6">
@@ -89,6 +126,87 @@ export default function RealEstatePage() {
                 <Button onClick={() => setShowAddForm(true)} className="gap-2">
                     <Plus className="h-4 w-4" /> Add Property
                 </Button>
+            </div>
+
+            {/* Navigation Quick Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold overflow-x-auto">
+                <a
+                    href="/real-estate"
+                    className="px-4 py-2 rounded-xl bg-primary text-white shadow-sm flex items-center gap-2 whitespace-nowrap"
+                >
+                    🏡 Guryaha & Dhulka ({properties.length})
+                </a>
+                <a
+                    href="/real-estate/bookings"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                    📅 Dalabyada (Bookings)
+                </a>
+            </div>
+
+            {/* FEATURED: PROMOTIONAL YOUTUBE VIDEO AD CARD FOR REAL ESTATE */}
+            <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/70 via-white to-slate-50 p-4 sm:p-5 shadow-sm space-y-4">
+                {/* Header row */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-200">
+                            <Youtube className="h-5 w-5" />
+                        </span>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase text-emerald-900 tracking-wider">
+                                    Muuqaalka Xayeysiiska Guryaha & Dhulka (YouTube Promo Ad)
+                                </span>
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-black uppercase tracking-wider">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse mr-1 inline-block" />
+                                    {promo.tag || "REAL ESTATE & PROPERTIES"}
+                                </Badge>
+                            </div>
+                            <span className="text-[11px] text-slate-500 font-medium">
+                                Toos looga aqrinayaa Supabase app_settings • Ka muuqda qaybta Guryaha & Dhulka
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Promo Card Body */}
+                <div className="grid gap-4 md:grid-cols-12 items-center">
+                    {/* Embedded 16:9 Video Player */}
+                    <div className="md:col-span-5 lg:col-span-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video relative shadow-inner">
+                        {promoVideoId ? (
+                            <iframe
+                                src={promoEmbedUrl}
+                                title={promo.title}
+                                className="absolute inset-0 w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+                                Muuqaal ma diyaarsana
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Text Details */}
+                    <div className="md:col-span-7 lg:col-span-8 space-y-2">
+                        <h4 className="text-base font-black text-slate-900 tracking-tight">
+                            {promo.title}
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                            {promo.desc}
+                        </p>
+                        <div className="pt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+                            <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 truncate max-w-xs">
+                                🔗 {promo.videoUrl}
+                            </span>
+                            <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> Live & Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {showAddForm && (

@@ -19,6 +19,8 @@ export default function HomePage() {
     else if (user.role === "seller") router.replace("/seller");
     else if (user.role === "restaurant") router.replace("/restaurant");
     else if (user.role === "delivery") router.replace("/delivery");
+    else if (user.role === "real_estate") router.replace("/real-estate");
+    else if (user.role === "second_hand") router.replace("/second-hand");
     else router.replace("/checkout");
   }, [user, loading, router]);
 

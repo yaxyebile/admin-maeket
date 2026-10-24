@@ -10,10 +10,11 @@ import { toast } from "sonner";
 interface ImageUploadProps {
     value: string;
     onChange: (url: string) => void;
+    label?: string;
     bucket?: string;
 }
 
-export function ImageUpload({ value, onChange, bucket = "products" }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, label = "Sawirka (Image)", bucket = "products" }: ImageUploadProps) {
     const [uploading, setUploading] = useState(false);
     const [mode, setMode] = useState<"upload" | "url">("upload");
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +89,7 @@ export function ImageUpload({ value, onChange, bucket = "products" }: ImageUploa
         <div className="space-y-3 w-full">
             <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
-                    <ImageIcon className="h-3.5 w-3.5 text-rose-400" /> Sawirka (Image)
+                    <ImageIcon className="h-3.5 w-3.5 text-rose-400" /> {label}
                 </span>
                 <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
                     <button

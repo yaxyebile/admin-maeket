@@ -31,8 +31,11 @@ Set:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 3. Apply database schema in Supabase SQL Editor: `supabase/migrations/001_initial_schema.sql`
+4. To enable the dedicated Second-Hand Manager role and listing ownership, run `supabase/migrations/010_second_hand_role_ownership.sql` in Supabase SQL Editor.
+5. To generate IDs for second-hand items, run `supabase/migrations/011_second_hand_item_id_default.sql` in Supabase SQL Editor.
+6. Promo videos are managed by admins. If migration 012 was already applied, run `supabase/migrations/013_revoke_role_promo_upload.sql` in Supabase SQL Editor to remove the role write policies.
 
-4. Run the dev server:
+7. Run the dev server:
 
 ```bash
 npm run dev
@@ -57,6 +60,8 @@ Custom auth via `profiles` table (not Supabase Auth). Login matches email or pho
 |--------|-----------|
 | Admin  | `/admin`  |
 | Seller | `/seller` |
+| Real Estate Manager | `/real-estate` |
+| Second-Hand Manager | `/second-hand` |
 
 ## Multi-store checkout (3 dukaan)
 

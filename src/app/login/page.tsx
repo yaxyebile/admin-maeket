@@ -34,6 +34,8 @@ export default function LoginPage() {
       else if (user.role === "restaurant") router.push("/restaurant");
       else if (user.role === "seller") router.push("/seller");
       else if (user.role === "delivery") router.push("/delivery");
+      else if (user.role === "real_estate") router.push("/real-estate");
+      else if (user.role === "second_hand") router.push("/second-hand");
       else router.push("/checkout");
     } catch {
       toast.error("Login failed. Check your connection.");

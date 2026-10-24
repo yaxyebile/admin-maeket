@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Utensils, Store as StoreIcon, Truck, ShieldCheck } from "lucide-react";
+import { Utensils, Store as StoreIcon, Truck, ShieldCheck, Home, Tags } from "lucide-react";
 
 export default function RegisterUserPage() {
   const router = useRouter();
@@ -89,6 +89,33 @@ export default function RegisterUserPage() {
       if (profileErr) {
         toast.error(profileErr.message);
       } else {
+        if (form.role === "second_hand") {
+          const { data: secondHandManagers } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("role", "second_hand");
+
+          if (secondHandManagers?.length === 1) {
+            await supabase
+              .from("second_hand_items")
+              .update({ owner_id: newUserId })
+              .is("owner_id", null);
+
+            const { data: ownedItems } = await supabase
+              .from("second_hand_items")
+              .select("title")
+              .eq("owner_id", newUserId);
+            const ownedTitles = [...new Set((ownedItems ?? []).map((item) => item.title).filter(Boolean))];
+
+            if (ownedTitles.length > 0) {
+              await supabase
+                .from("second_hand_bookings")
+                .update({ owner_id: newUserId })
+                .in("item_title", ownedTitles)
+                .is("owner_id", null);
+            }
+          }
+        }
         toast.success(
           `✅ Account-ka ${form.name} (${form.role.toUpperCase()}) waa la abuuray! Akoonkiisa wuu diyaar u yahay login.`
         );
@@ -105,7 +132,7 @@ export default function RegisterUserPage() {
     <div>
       <PageHeader
         title="Register User Account"
-        description="Add Restaurant Manager, Seller, Delivery Driver, or Admin account"
+        description="Add Restaurant, Seller, Delivery, Real Estate, Second-Hand, or Admin account"
       />
       <Card className="max-w-2xl rounded-3xl shadow-sm border-slate-200">
         <CardContent className="p-6">
@@ -113,7 +140,7 @@ export default function RegisterUserPage() {
             {/* User Role Selection Pills */}
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-700">Select User Role (Nooca Akoonka)</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, role: "restaurant" })}
@@ -148,6 +175,30 @@ export default function RegisterUserPage() {
                 >
                   <Truck className="h-5 w-5 mb-1" />
                   Delivery Driver
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: "real_estate" })}
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-xs font-bold ${form.role === "real_estate"
+                      ? "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                >
+                  <Home className="h-5 w-5 mb-1" />
+                  Real Estate
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: "second_hand" })}
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-xs font-bold ${form.role === "second_hand"
+                      ? "border-amber-600 bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                >
+                  <Tags className="h-5 w-5 mb-1" />
+                  Second Hand
                 </button>
 
                 <button
