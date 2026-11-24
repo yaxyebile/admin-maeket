@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { PromoBanner } from "@/lib/types";
 import { generateId } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableSkeleton } from "@/components/loading-skeleton";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Upload, Loader2 } from "lucide-react";
 
 const emptyForm = {
   image_url: "",
@@ -27,6 +27,8 @@ export default function AdminPromosPage() {
   const [editing, setEditing] = useState<PromoBanner | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [showForm, setShowForm] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("promo_banners").select("*");
@@ -44,9 +46,54 @@ export default function AdminPromosPage() {
     setShowForm(false);
   };
 
+  const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image must be smaller than 8MB");
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const extension = file.name.split(".").pop()?.replace(/[^a-z0-9]/gi, "") || "jpg";
+      const fileName = `promo-banners/${generateId()}.${extension}`;
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+      if (error) {
+        toast.error(`Image upload failed: ${error.message}`);
+        return;
+      }
+
+      const { data } = supabase.storage.from("images").getPublicUrl(fileName);
+      if (!data.publicUrl) {
+        toast.error("Could not get the uploaded image URL");
+        return;
+      }
+
+      setForm((current) => ({ ...current, image_url: data.publicUrl }));
+      toast.success("Image uploaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Image upload failed");
+    } finally {
+      setUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  };
+
   const save = async () => {
+    if (uploadingImage) return;
     if (!form.title || !form.image_url) {
-      toast.error("Title and image URL required");
+      toast.error("Title and image required");
       return;
     }
     if (editing) {
@@ -120,13 +167,46 @@ export default function AdminPromosPage() {
               {editing ? "Edit Promo" : "New Promo"}
             </h3>
             <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input
-                value={form.image_url}
-                onChange={(e) =>
-                  setForm({ ...form, image_url: e.target.value })
-                }
-              />
+              <Label htmlFor="promo-image-url">Image</Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="promo-image-url"
+                  type="url"
+                  placeholder="Paste an image URL or choose a file"
+                  value={form.image_url}
+                  onChange={(e) =>
+                    setForm({ ...form, image_url: e.target.value })
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="shrink-0"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {uploadingImage ? "Uploading..." : "Choose file"}
+                </Button>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={uploadImage}
+                  className="hidden"
+                />
+              </div>
+              {form.image_url && (
+                <img
+                  src={form.image_url}
+                  alt="Promo image preview"
+                  className="h-36 w-full rounded-xl border border-slate-200 object-cover"
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label>Title</Label>
@@ -163,7 +243,9 @@ export default function AdminPromosPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={save}>Save</Button>
+              <Button onClick={save} disabled={uploadingImage}>
+                Save
+              </Button>
               <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
@@ -208,3 +290,4 @@ export default function AdminPromosPage() {
     </div>
   );
 }
+
